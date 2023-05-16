@@ -1,11 +1,14 @@
 import aiogram
 from aiogram import Dispatcher, types
+import uuid
 from dataclasses import dataclass
 from enum import Enum
 from Tour import Tour
 import copy
 import json
+from db import *
 
+admins = [558838836, 842921731, 442132164]
 
 class ExpectedMessage(Enum):
     unexpected = 0
@@ -31,10 +34,11 @@ class ExpectedMessage(Enum):
     cur_form_contacts = 20
     cur_form_comment = 21
     wait_user_mes = 22
+    user_id = 23
 
 
 class FormForOne:
-    #При изменении класса надо также менять Users Encoder
+    # При изменении класса надо также менять Users Encoder
     town = "Not filled"
     purpose_of_trip = "Not filled"
     duration_of_trip = "Not filled"
@@ -486,9 +490,21 @@ class Bot:
                 self.chats[call["from"]["id"]].cur_tour.contacts), reply_markup=markup)
         elif call.data == "send_cur_form":
             await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-            # добавили в список анкет
-            self.chats[call["from"]["id"]].tours.append(copy.copy(self.chats[call["from"]["id"]].cur_tour))
-            self.chats[call["from"]["id"]].cur_tour.town = "Not Filled"  # обнулила текущую анкету
+
+            # добавили в db 
+            copy_cur_tour = copy.copy(self.chats[call["from"]["id"]].cur_tour)
+            list_parametrs = [str(uuid.uuid4()), call.message.chat.id, copy_cur_tour.town, copy_cur_tour.purpose_of_trip,
+                              copy_cur_tour.duration_of_trip,
+                              copy_cur_tour.company, copy_cur_tour.budget, copy_cur_tour.lifestyle,
+                              copy_cur_tour.count_visiting,
+                              copy_cur_tour.transport, copy_cur_tour.contacts, copy_cur_tour.comments]
+            cur_user_form = [tuple(list_parametrs)]
+            with con:
+                con.executemany(sql, cur_user_form)
+
+            # self.chats[call["from"]["id"]].tours.append(copy.copy(self.chats[call["from"]["id"]].cur_tour))
+            # обнулила текущую анкету
+            self.chats[call["from"]["id"]].cur_tour.town = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.purpose_of_trip = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.duration_of_trip = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.company = "Not Filled"
@@ -504,6 +520,13 @@ class Bot:
                                                             '\n➡ Виктория: @at_one_day'
                                                             '\n➡ Даниил: @Daniilklo'
                                                             '\n📩 Наша почта 📩 Tour4You@yandex.ru')
+            self.chats[call["from"]["id"]].filling_the_form = False
+
+            # отправить уведомления админам
+            for admin in admins:
+                await self.bot.send_message(admin, "🆘 User {0} заполнил анкету, просмотрите в незаконченных "
+                                                   "заказах 🆘".format(call["from"]["id"]))
+
             await self.print_special_message(chat_id, 'menu', call["from"])
         elif call.data == "fill_form_again":
             await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
@@ -527,13 +550,27 @@ class Bot:
                 json.dump(self.chats, fd, cls=UsersEncoder)
             x = 42 / 0
         elif call.data == "uncomp_orders":
-            await self.print_special_message(chat_id, "plug", call["from"])
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id, "Админ, по этой ссылке ты можешь открыть файл с незаконченными "
+                                                              "заказами: https://sqliteviewer.app")
+            await self.bot.send_document(chat_id=call.message.chat.id, document=open('not_finished_forms.db', 'rb'))
+            # await self.print_special_message(chat_id, "plug", call["from"])
         elif call.data == "comp_orders":
-            await self.print_special_message(chat_id, "plug", call["from"])
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id,
+                                        "Админ, по этой ссылке ты можешь открыть файл с выполненными "
+                                        "заказами: https://sqliteviewer.app")
+            await self.bot.send_document(chat_id=call.message.chat.id, document=open('finished_forms.db', 'rb'))
+            # await self.print_special_message(chat_id, "plug", call["from"])
         elif call.data == "stat":
             await self.print_special_message(chat_id, "plug", call["from"])
         elif call.data == "send_plan":
-            await self.print_special_message(chat_id, "plug", call["from"])
+            await self.bot.send_message(call.message.chat.id, 'Напишите уникальный номер заказа, user_id, town, ссылку, кому собираетесь отправлять план через один пробел!!', reply_markup=None)
+            self.chats[call["from"]["id"]].expect_mes = ExpectedMessage.user_id
+            self.chats[call["from"]["id"]].all_blocked = True
+            # await self.print_special_message(chat_id, "plug", call["from"])
         elif call.data == "send_mes":
             await self.send_adm_mes(chat_id, call["from"], 0)
         elif call.data == "exit_from_form_start":
@@ -713,7 +750,8 @@ class Bot:
         if stage == 0:
             self.chats[admin["id"]].expect_mes = ExpectedMessage.wait_user_mes
             self.chats[admin["id"]].all_blocked = True
-            await self.bot.send_message(chat_id, "Введите айди пользователя и через символ * сообщение или напишите отмена")
+            await self.bot.send_message(chat_id,
+                                        "Введите айди пользователя и через символ * сообщение или напишите отмена")
         else:
             user_id, mes = message.split("*")
             await self.bot.send_message(int(user_id), mes)
