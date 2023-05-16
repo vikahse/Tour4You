@@ -1,6 +1,6 @@
 import asyncio
 from aiogram import Dispatcher, types
-
+from db import *
 from BotClass import Bot, ExpectedMessage, FormForOne
 
 TOKEN = ""
@@ -166,6 +166,27 @@ async def answer(message):
             await TourBot.print_special_message(message["from"]["id"], "hi_admin", message["from"])
         else:
             await TourBot.send_adm_mes(message.chat.id, message["from"], -1, message=message.text)
+    elif TourBot.chats[message["from"]["id"]].expect_mes == ExpectedMessage.user_id:
+        TourBot.chats[message["from"]["id"]].all_blocked = False
+        number, user_id, town, plan = message.text.split()
+
+        # записали в bd finished_forms
+        list_parametrs = [user_id, town, plan]
+        cur_user_form = [tuple(list_parametrs)]
+        with con2:
+            con2.executemany(sql2, cur_user_form)
+
+        # удалить запись из bd not_finished
+        cursor = con.cursor()
+        cursor.execute("DELETE FROM not_finished_forms WHERE key=?", (number,))
+        con.commit()
+        cursor.close()
+
+        # отправили уведомление пользователю
+        await TourBot.bot.send_message(user_id, '❗ ATTENTION ❗'
+                                                '\n Дорогой пользователь, Вам пришел план 📜'
+                                                '\n Приятного путешествия ! Будем ждать Ваш фидбек 💜'
+                                                '\n План: {0}'.format(plan))
 
 
 async def main():
