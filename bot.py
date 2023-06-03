@@ -31,6 +31,7 @@ async def menu(message):
 async def profile_info(message):
     await TourBot.print_special_message(message.chat.id, "profile_info", message["from"])
 
+
 @TourBot.dp.message_handler(commands=['info'])
 async def info(message):
     await TourBot.print_special_message(message.chat.id, "info", message["from"])
@@ -92,7 +93,8 @@ async def answer(message):
         markup = types.InlineKeyboardMarkup()
         but_form = types.InlineKeyboardButton(text='Заполненная анкета', callback_data="cur_form_comment_no")
         markup.add(but_form)
-        await TourBot.bot.send_message(message["from"]["id"], 'Просмотреть заполненную анкету перед отправкой', reply_markup=markup)
+        await TourBot.bot.send_message(message["from"]["id"], 'Просмотреть заполненную анкету перед отправкой',
+                                       reply_markup=markup)
     elif TourBot.chats[message["from"]["id"]].expect_mes == ExpectedMessage.age_for_reg:
         if message.text.isdigit():
             TourBot.chats[message["from"]["id"]].age = int(message.text)
@@ -168,29 +170,57 @@ async def answer(message):
             await TourBot.send_adm_mes(message.chat.id, message["from"], -1, message=message.text)
     elif TourBot.chats[message["from"]["id"]].expect_mes == ExpectedMessage.user_id:
         TourBot.chats[message["from"]["id"]].all_blocked = False
-        number, user_id, town, plan = message.text.split()
+        try:
+            number, user_id, town, plan, duration = message.text.split("*")
+            key = number.split()[0]
 
-        # записали в bd finished_forms
-        list_parametrs = [user_id, town, plan]
-        cur_user_form = [tuple(list_parametrs)]
-        with con2:
-            con2.executemany(sql2, cur_user_form)
-
-        # удалить запись из bd not_finished
-        cursor = con.cursor()
-        cursor.execute("DELETE FROM not_finished_forms WHERE key=?", (number,))
-        con.commit()
-        cursor.close()
-
-        # отправили уведомление пользователю
-        await TourBot.bot.send_message(user_id, '❗ ATTENTION ❗'
-                                                '\n Дорогой пользователь, Вам пришел план 📜'
-                                                '\n Приятного путешествия ! Будем ждать Ваш фидбек 💜'
-                                                '\n План: {0}'.format(plan))
+            cursor = con.cursor()
+            cursor.execute("SELECT * FROM not_finished_forms WHERE key=?", (key,))
+            table = cursor.fetchall()
+            if len(table) == 0:
+                cursor.close()
+                await TourBot.bot.send_message(message["from"]["id"], "Такого key d db нет ❌")
+            else:
+                # записали в bd finished_forms
+                list_parametrs = [user_id, town, plan]
+                cur_user_form = [tuple(list_parametrs)]
+                with con2:
+                    con2.executemany(sql2, cur_user_form)
+                # удалить запись из bd not_finished
+                cursor.execute("DELETE FROM not_finished_forms WHERE key=?", (key,))
+                con.commit()
+                cursor.close()
+                # отправили уведомление пользователю
+                list_parametrs.append(duration)
+                try:
+                    TourBot.chats[int(user_id)].tours.append(list_parametrs)
+                    await TourBot.bot.send_message(int(user_id), '❗❗ ATTENTION ❗❗'
+                                                                 '\n Дорогой пользователь, Вам пришел план 📜'
+                                                                 '\n Приятного путешествия ! Будем ждать Ваш фидбек 💜'
+                                                                 '\n План: {0}'.format(plan))
+                    await TourBot.bot.send_message(message["from"]["id"], "Отправлено ✅")
+                except Exception:
+                    await TourBot.bot.send_message(message["from"]["id"], "Такого пользователя нет ❌")
+        except ValueError:
+            await TourBot.bot.send_message(message["from"]["id"], "Вы неправильно ввели ❌")
+    elif TourBot.chats[message["from"]["id"]].expect_mes == ExpectedMessage.wait_adm_mes:
+        if message.text == "отмена":
+            TourBot.chats[message["from"]["id"]].all_blocked = False
+            TourBot.chats[message["from"]["id"]].expect_mes = ExpectedMessage.unexpected
+            await TourBot.print_special_message(message["from"]["id"], "menu", message["from"])
+        else:
+            for admin_id in admins:
+                await TourBot.bot.send_message(admin_id, "❕❕ Сообщение от пользователя {0}❕❕"
+                                                         "\nТекст: {1}".format(message["from"]["id"], message.text))
+            await TourBot.bot.send_message(message["from"]["id"], "Cообщение администратору отправлено ✅")
+            TourBot.chats[message["from"]["id"]].all_blocked = False
+            TourBot.chats[message["from"]["id"]].expect_mes = ExpectedMessage.unexpected
+            await TourBot.print_special_message(message["from"]["id"], "menu", message["from"])
 
 
 async def main():
     await TourBot.start()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
