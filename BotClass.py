@@ -10,6 +10,7 @@ from db import *
 
 admins = [558838836, 842921731, 442132164]
 
+
 class ExpectedMessage(Enum):
     unexpected = 0
     city_for_solo_tour = 1
@@ -35,6 +36,7 @@ class ExpectedMessage(Enum):
     cur_form_comment = 21
     wait_user_mes = 22
     user_id = 23
+    wait_adm_mes = 24
 
 
 class FormForOne:
@@ -143,7 +145,8 @@ class Bot:
                                                        callback_data='continue_filling_the_form')
                     markup.add(but_y, but_n)
                     await self.bot.send_message(chat_id,
-                                                'Вы уверены, что хотите прекратить заполнять форму ? Ответы не будут сохранены ❌',
+                                                'Вы уверены, что хотите прекратить заполнять форму ? '
+                                                'Ответы не будут сохранены ❌',
                                                 reply_markup=markup)
             else:
                 self.chats[chat_id] = Chat()
@@ -180,7 +183,8 @@ class Bot:
                                                        callback_data='continue_filling_the_form')
                     markup.add(but_y, but_n)
                     await self.bot.send_message(chat_id,
-                                                'Вы уверены, что хотите прекратить заполнять форму ? Ответы не будут сохранены ❌',
+                                                'Вы уверены, что хотите прекратить заполнять форму ? '
+                                                'Ответы не будут сохранены ❌',
                                                 reply_markup=markup)
                 else:
                     self.chats[user["id"]].expect_mes = ExpectedMessage.unexpected
@@ -192,8 +196,10 @@ class Bot:
                     # but_pm = types.InlineKeyboardButton(text='Спланировать путешествие для компании', callback_data='tour_many')
                     but_pt = types.InlineKeyboardButton(text='Покажи мои прошлые путешествия',
                                                         callback_data='prev_tours')
+                    but_am = types.InlineKeyboardButton(text='Написать администратору',
+                                                        callback_data='admin_mes')
                     but_inf = types.InlineKeyboardButton(text='Справка о компании', callback_data='comp_info')
-                    markup.add(but_e, but_po, but_pt, but_inf)
+                    markup.add(but_e, but_po, but_pt, but_am, but_inf)
                     await self.bot.send_message(chat_id, '🔮 Чем могу помочь? 🔮', reply_markup=markup)
             else:
                 await self.print_special_message(chat_id, "start", user)
@@ -209,7 +215,8 @@ class Bot:
                                                        callback_data='continue_filling_the_form')
                     markup.add(but_y, but_n)
                     await self.bot.send_message(chat_id,
-                                                'Вы уверены, что хотите прекратить заполнять форму ? Ответы не будут сохранены ❌',
+                                                'Вы уверены, что хотите прекратить заполнять форму ? '
+                                                'Ответы не будут сохранены ❌',
                                                 reply_markup=markup)
                 else:
                     markup = types.InlineKeyboardMarkup(row_width=1)
@@ -249,10 +256,9 @@ class Bot:
             self.chats[user["id"]].cur_tour.comments = "Not Filled"
             self.chats[user["id"]].cur_tour.contacts = "Not Filled"
 
-            await self.bot.send_message(chat_id, '🗺 Давайте спланируем Вам незабываемое путешествие 🗺',
-                                        reply_markup=None)
+            await self.bot.send_message(chat_id, '🗺 Давайте спланируем Вам незабываемое путешествие 🗺')
             self.chats[user["id"]].filling_the_form = True
-            await self.bot.send_message(chat_id, '📍 В какой город Вы поедете?', reply_markup=None)
+            await self.bot.send_message(chat_id, '📍 В какой город Вы поедете?')
             self.chats[user["id"]].expect_mes = ExpectedMessage.city_for_solo_tour
             self.chats[user["id"]].all_blocked = True
         elif mes_type == "info":
@@ -267,13 +273,15 @@ class Bot:
                                                        callback_data='continue_filling_the_form')
                     markup.add(but_y, but_n)
                     await self.bot.send_message(chat_id,
-                                                'Вы уверены, что хотите прекратить заполнять форму ? Ответы не будут сохранены ❌',
+                                                'Вы уверены, что хотите прекратить заполнять форму ? '
+                                                'Ответы не будут сохранены ❌',
                                                 reply_markup=markup)
                 else:
                     await self.bot.send_message(chat_id,
-                                                '💟 Мы стартап Tour4You 💟 Отвечаем за Ваш насыщенный и интересный отдых, '
+                                                '💟 Мы стартап Tour4You 💟 Отвечаем за Ваш насыщенный и интересный '
+                                                'отдых, '
                                                 'составляя за Вас программу путешествия и прокладывая маршрут 🗺'
-                                                '\n\n✈️ Сейчас мы предлагаем Вам познакомиться с предлагаемыми возможностями и '
+                                                '\n\n✈️ Сейчас мы предлагаем Вам ознакомиться с предлагаемыми возможностями и '
                                                 'оценить качество предложенной услуги. Для этого Вам необходимо заполнить первоначальную анкету, '
                                                 'указав информацию о себе в нашем телеграмм боте @Tour4You_Bot. Затем Вы можете заполнить анкету для составления путешествий, указав свои интересы, '
                                                 'намерения и пожелания на Вашу ближайшую поездку. После отправки, в течение суток, Вы получите подробный план путешествия, отвечающий всем Вашим пожеланиям. '
@@ -284,20 +292,22 @@ class Bot:
                                                 '\n➡ Светлана: @Svetlana_Gi'
                                                 '\n➡ Виктория: @at_one_day'
                                                 '\n➡ Даниил: @Daniilklo'
-                                                '\n\n📩 Наша почта 📩 Tour4You@yandex.ru'
+                                                '\n\n📩 Наша почта 📩 tour4youhelp@gmail.com'
                                                 '\n\n❓Функционал бота ❓'
                                                 '\n📌 Вкладка «Редактировать информацию о себе» - в любое удобное время, Вы можете '
                                                 'изменить информацию о себе'
                                                 '\n📌 Вкладка «Спланировать путешествия для меня» - нажав на нее Вы сможете заполнить анкету '
                                                 'для планирования нового путешествия'
                                                 '\n📌 Вкладка «Покажи мои прошлые путешествия» - в любое время Вы сможете возвращаться к уже '
-                                                'созданным планам Ваших путешествий')
+                                                'созданным планам Ваших путешествий'
+                                                '\n📌 Вкладка «Написать администратору» - в любое время Вы можете написать администратору как по '
+                                                'деловому вопросу, так и оставить Ваш комментарий насчет путешествия, бота и т.д.')
                     await self.print_special_message(chat_id, "menu", user)
             else:
                 await self.print_special_message(chat_id, "start", user)
         elif mes_type == "hi_admin":
             markup = types.InlineKeyboardMarkup(row_width=1)
-            but_m = types.InlineKeyboardButton(text='Вернуться в меню', callback_data='back_to_menu')
+            but_m = types.InlineKeyboardButton(text='Вернуться в меню', callback_data='back_to_menu_admin')
             but_e = types.InlineKeyboardButton(text='Завершить работу программы', callback_data='end')
             but_s = types.InlineKeyboardButton(text='Сохранить данные о пользователях', callback_data='save')
             but_uo = types.InlineKeyboardButton(text='Посмотреть невыполненные заказы', callback_data='uncomp_orders')
@@ -306,7 +316,7 @@ class Bot:
             but_sp = types.InlineKeyboardButton(text='Отправить план', callback_data='send_plan')
             but_sm = types.InlineKeyboardButton(text='Отправить сообщение пользователю', callback_data='send_mes')
             markup.add(but_m, but_e, but_s, but_uo, but_po, but_sp, but_st, but_sm)
-            await self.bot.send_message(chat_id, 'Привет админ', reply_markup=markup)
+            await self.bot.send_message(chat_id, 'Привет админ 😎💵', reply_markup=markup)
         elif mes_type == "perm_denied":
             await self.bot.send_message(chat_id, 'Нет доступа')
             await self.print_special_message(chat_id, "menu", user)
@@ -320,14 +330,14 @@ class Bot:
         if self.chats[call["from"]["id"]].all_blocked:
             pass
         elif call.data == 'start_work':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.registration(chat_id, call["from"], 3)
         elif call.data == 'help':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.send_message(call.message.chat.id,
                                         '💟 Мы стартап Tour4You 💟 Отвечаем за Ваш насыщенный и интересный отдых, '
                                         'составляя за Вас программу путешествия и прокладывая маршрут 🗺'
-                                        '\n\n✈️ Сейчас мы предлагаем Вам познакомиться с предлагаемыми возможностями и '
+                                        '\n\n✈️ Сейчас мы предлагаем Вам ознакомиться с предлагаемыми возможностями и '
                                         'оценить качество предложенной услуги. Для этого Вам необходимо заполнить первоначальную анкету, '
                                         'указав информацию о себе в нашем телеграмм боте @Tour4You_Bot. Затем Вы можете заполнить анкету для составления путешествий, указав свои интересы, '
                                         'намерения и пожелания на Вашу ближайшую поездку. После отправки, в течение суток, Вы получите подробный план путешествия, отвечающий всем Вашим пожеланиям. '
@@ -338,35 +348,36 @@ class Bot:
                                         '\n➡ Светлана: @Svetlana_Gi'
                                         '\n➡ Виктория: @at_one_day'
                                         '\n➡ Даниил: @Daniilklo'
-                                        '\n\n📩 Наша почта 📩 Tour4You@yandex.ru'
+                                        '\n\n📩 Наша почта 📩 tour4youhelp@gmail.com'
                                         '\n\n❓Функционал бота ❓'
                                         '\n📌 Вкладка «Редактировать информацию о себе» - в любое удобное время, Вы можете '
                                         'изменить информацию о себе'
                                         '\n📌 Вкладка «Спланировать путешествия для меня» - нажав на нее Вы сможете заполнить анкету '
                                         'для планирования нового путешествия'
                                         '\n📌 Вкладка «Покажи мои прошлые путешествия» - в любое время Вы сможете возвращаться к уже '
-                                        'созданным планам Ваших путешествий')
+                                        'созданным планам Ваших путешествий'
+                                        '\n📌 Вкладка «Написать администратору» - в любое время Вы можете написать администратору как по '
+                                        'деловому вопросу, так и оставить Ваш комментарий насчет путешествия, бота и т.д.')
             await self.print_special_message(chat_id, "start_after_info", call["from"])
             # await self.print_special_message(chat_id, 'plug', call["from"])
         elif call.data == 'edit_profile':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             await self.print_special_message(chat_id, 'profile_info', call["from"])
         elif call.data == 'tour_one':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             await self.print_special_message(chat_id, 'plan_solo_tour', call["from"])
         elif call.data == 'tour_many':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.print_special_message(chat_id, 'plug', call["from"])
         elif call.data == 'back_to_menu':
-            # await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
             self.expected_message_type = ExpectedMessage.unexpected
             # self.chats[call["from"]["id"]].all_blocked = False
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.print_special_message(chat_id, 'menu', call["from"])
         elif call.data == 'change_age':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.send_message(call["from"]["id"], '🟣 Каков ваш возраст?')
             self.chats[call["from"]["id"]].expect_mes = ExpectedMessage.change_age
             self.chats[call["from"]["id"]].all_blocked = True
@@ -383,61 +394,57 @@ class Bot:
             markup.add(but_yes, but_no)
             await self.bot.send_message(call.message.chat.id, '🟣 У Вас есть водительские права?', reply_markup=markup)
         elif call.data == 'registration_sex_male':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.send_message(call.message.chat.id, 'Пол: Мужской', reply_markup=None)
             self.chats[call["from"]["id"]].sex = True
             await self.registration(chat_id, call["from"], 2)
         elif call.data == 'registration_sex_female':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-            await self.bot.send_message(call.message.chat.id, 'Пол: Женский', reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id, 'Пол: Женский')
             self.chats[call["from"]["id"]].sex = False
             await self.registration(chat_id, call["from"], 2)
         elif call.data == 'change_sex_male':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-            await self.bot.send_message(call.message.chat.id, 'Пол: Мужской', reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id, 'Пол: Мужской')
             self.chats[call["from"]["id"]].sex = True
             await self.print_special_message(call["from"]["id"], "profile_info", call["from"])
         elif call.data == 'change_sex_female':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-            await self.bot.send_message(call.message.chat.id, 'Пол: Женский', reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id, 'Пол: Женский')
             self.chats[call["from"]["id"]].sex = False
             await self.print_special_message(call["from"]["id"], "profile_info", call["from"])
         elif call.data == 'registration_dl_yes':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
-            await self.bot.send_message(call.message.chat.id, 'Наличие водительских прав: Есть', reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id, 'Наличие водительских прав: Есть')
             self.chats[call["from"]["id"]].dl = True
             await self.registration(chat_id, call["from"], 4)
         elif call.data == 'registration_dl_no':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
-            await self.bot.send_message(call.message.chat.id, 'Наличие водительских прав: Нет', reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id, 'Наличие водительских прав: Нет')
             self.chats[call["from"]["id"]].dl = False
             await self.registration(chat_id, call["from"], 4)
         elif call.data == 'change_dl_yes':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
-            await self.bot.send_message(call.message.chat.id, 'Наличие водительских прав: Есть', reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id, 'Наличие водительских прав: Есть')
             self.chats[call["from"]["id"]].dl = True
             await self.print_special_message(call["from"]["id"], "profile_info", call["from"])
         elif call.data == 'change_dl_no':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
-            await self.bot.send_message(call.message.chat.id, 'Наличие водительских прав: Нет', reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id, 'Наличие водительских прав: Нет')
             self.chats[call["from"]["id"]].dl = False
             await self.print_special_message(call["from"]["id"], "profile_info", call["from"])
         elif call.data == 'change_name':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.send_message(call["from"]["id"], '🟣 Как Вас зовут?')
             self.chats[call["from"]["id"]].expect_mes = ExpectedMessage.change_name
             self.chats[call["from"]["id"]].all_blocked = True
         elif call.data == 'change_contacts':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.send_message(call["from"]["id"], '🟣 Как еще можно с Вами связаться (телефон/почта/...) ?')
             self.chats[call["from"]["id"]].expect_mes = ExpectedMessage.change_contacts
             self.chats[call["from"]["id"]].all_blocked = True
         elif call.data == 'prev_tours':
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             if len(self.chats[call["from"]["id"]].tours) == 0:
                 await self.bot.send_message(call["from"]["id"], 'У Вас еще нет планов путешествий 🥺')
@@ -447,22 +454,23 @@ class Bot:
                     await self.bot.send_message(call["from"]["id"], '✈️ Поездка № {0}'
                                                                     '\n📍 Куда: {1}'
                                                                     '\n📍 Дата поездки: {2}'
-                                                                    '\n📍 Ссылка на план путешествия: \n\n'.format(
+                                                                    '\n📍 Ссылка на план путешествия: {3} \n\n'.format(
                         str(i + 1),
-                        self.chats[call["from"]["id"]].tours[i].town,
-                        self.chats[call["from"]["id"]].tours[i].duration_of_trip))
+                        self.chats[call["from"]["id"]].tours[i][1],
+                        self.chats[call["from"]["id"]].tours[i][3],
+                        self.chats[call["from"]["id"]].tours[i][2]))
                 await self.print_special_message(call["from"]["id"], "menu", call["from"])
         elif call.data == "comp_info":
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             await self.print_special_message(chat_id, 'info', call["from"])
         elif call.data == "cur_form_comment_yes":
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.send_message(call["from"]["id"], 'Напишите Ваш комментарий:')
             self.chats[call["from"]["id"]].expect_mes = ExpectedMessage.cur_form_comment
             self.chats[call["from"]["id"]].all_blocked = True
         elif call.data == "cur_form_comment_no":
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             markup = types.InlineKeyboardMarkup(row_width=1)
             but_s = types.InlineKeyboardButton(text='Отправить анкету', callback_data="send_cur_form")
             but_a = types.InlineKeyboardButton(text='Заполнить анкету заново', callback_data="fill_form_again")
@@ -489,11 +497,12 @@ class Bot:
                 self.chats[call["from"]["id"]].cur_tour.comments,
                 self.chats[call["from"]["id"]].cur_tour.contacts), reply_markup=markup)
         elif call.data == "send_cur_form":
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
 
             # добавили в db 
             copy_cur_tour = copy.copy(self.chats[call["from"]["id"]].cur_tour)
-            list_parametrs = [str(uuid.uuid4()), call.message.chat.id, copy_cur_tour.town, copy_cur_tour.purpose_of_trip,
+            list_parametrs = [str(uuid.uuid4()), str(call["from"]["id"]), copy_cur_tour.town,
+                              copy_cur_tour.purpose_of_trip,
                               copy_cur_tour.duration_of_trip,
                               copy_cur_tour.company, copy_cur_tour.budget, copy_cur_tour.lifestyle,
                               copy_cur_tour.count_visiting,
@@ -514,12 +523,13 @@ class Bot:
             self.chats[call["from"]["id"]].cur_tour.transport = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.comments = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.contacts = "Not Filled"
-            await self.bot.send_message(call["from"]["id"], 'Ваша анкета отправлена ✅ Скоро с Вами свяжутся!'
-                                                            '\n☎ Контакты для связи ☎'
+            await self.bot.send_message(call["from"]["id"], 'Ваша анкета отправлена ✅'
+                                                            '\n\n💰По поводу оплаты с Вами скоро свяжутся'
+                                                            '\n\n☎ Контакты для связи ☎'
                                                             '\n➡ Светлана: @Svetlana_Gi'
                                                             '\n➡ Виктория: @at_one_day'
                                                             '\n➡ Даниил: @Daniilklo'
-                                                            '\n📩 Наша почта 📩 Tour4You@yandex.ru')
+                                                            '\n\n📩 Наша почта 📩 tour4youhelp@gmail.com')
             self.chats[call["from"]["id"]].filling_the_form = False
 
             # отправить уведомления админам
@@ -529,7 +539,7 @@ class Bot:
 
             await self.print_special_message(chat_id, 'menu', call["from"])
         elif call.data == "fill_form_again":
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             self.chats[call["from"]["id"]].cur_tour.town = "Not Filled"  # обнулила текущую анкету
             self.chats[call["from"]["id"]].cur_tour.purpose_of_trip = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.duration_of_trip = "Not Filled"
@@ -544,30 +554,61 @@ class Bot:
         elif call.data == "save":
             with open(self.user_file, "w") as fd:
                 json.dump(self.chats, fd, cls=UsersEncoder)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             await self.print_special_message(chat_id, 'hi_admin', call["from"])
         elif call.data == "end":
             with open(self.user_file, "w") as fd:
                 json.dump(self.chats, fd, cls=UsersEncoder)
             x = 42 / 0
         elif call.data == "uncomp_orders":
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
-            await self.bot.send_message(call.message.chat.id, "Админ, по этой ссылке ты можешь открыть файл с незаконченными "
-                                                              "заказами: https://sqliteviewer.app")
+            await self.bot.send_message(call.message.chat.id,
+                                        "❗Админ, по этой ссылке ты сможешь открыть скаченный ниже файл с незаконченными "
+                                        "заказами: https://sqliteviewer.app")
             await self.bot.send_document(chat_id=call.message.chat.id, document=open('not_finished_forms.db', 'rb'))
             # await self.print_special_message(chat_id, "plug", call["from"])
         elif call.data == "comp_orders":
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             await self.bot.send_message(call.message.chat.id,
-                                        "Админ, по этой ссылке ты можешь открыть файл с выполненными "
+                                        "❗Админ, по этой ссылке ты сможешь открыть скаченный ниже файл с выполненными "
                                         "заказами: https://sqliteviewer.app")
             await self.bot.send_document(chat_id=call.message.chat.id, document=open('finished_forms.db', 'rb'))
             # await self.print_special_message(chat_id, "plug", call["from"])
         elif call.data == "stat":
-            await self.print_special_message(chat_id, "plug", call["from"])
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
+            # считаем кол-во невыполненных заказов
+            count_not_finished_forms = 0
+            count_finished_forms = 0
+            with con:
+                table = con.execute("SELECT * FROM not_finished_forms")
+                for row in table:
+                    count_not_finished_forms += 1
+            # считаем кол-во выполненных заказов
+            with con2:
+                table = con2.execute("SELECT * FROM finished_forms")
+                for row in table:
+                    count_finished_forms += 1
+            money = count_finished_forms * 200
+            count_users = len(self.chats)
+            await self.bot.send_message(call.message.chat.id, "🧮 Статистика"
+                                                              "\n🔺Кол-во зарегистрировавшихся пользователей: {0}"
+                                                              "\n🔻Прибыль: {1}"
+                                                              "\n🔺Кол-во выполненных заказов: {2}"
+                                                              "\n🔻Кол-во невыполненных заказов: {3}".format(
+                count_users, money,
+                count_finished_forms,
+                count_not_finished_forms))
+            # await self.print_special_message(chat_id, "plug", call["from"])
         elif call.data == "send_plan":
-            await self.bot.send_message(call.message.chat.id, 'Напишите уникальный номер заказа, user_id, town, ссылку, кому собираетесь отправлять план через один пробел!!', reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call.message.chat.id,
+                                        'Напишите уникальный номер заказа, user_id, town, ссылку, '
+                                        'продолжительность поездки, кому собираетесь отправлять план через * !!')
             self.chats[call["from"]["id"]].expect_mes = ExpectedMessage.user_id
             self.chats[call["from"]["id"]].all_blocked = True
             # await self.print_special_message(chat_id, "plug", call["from"])
@@ -576,7 +617,7 @@ class Bot:
         elif call.data == "exit_from_form_start":
             self.chats[call["from"]["id"]].all_blocked = False
             self.chats[call["from"]["id"]].filling_the_form = False
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             self.chats[call["from"]["id"]].cur_tour.town = "Not Filled"  # обнулила текущую анкету
             self.chats[call["from"]["id"]].cur_tour.purpose_of_trip = "Not Filled"
@@ -589,12 +630,12 @@ class Bot:
             self.chats[call["from"]["id"]].cur_tour.comments = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.contacts = "Not Filled"
 
-            await self.bot.send_message(call["from"]["id"], 'Вы вышли из формы 🔚', reply_markup=None)
+            await self.bot.send_message(call["from"]["id"], 'Вы вышли из формы 🔚')
             await self.print_special_message(chat_id, 'start', call["from"])
         elif call.data == "exit_from_form_menu":
             self.chats[call["from"]["id"]].all_blocked = False
             self.chats[call["from"]["id"]].filling_the_form = False
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             self.chats[call["from"]["id"]].cur_tour.town = "Not Filled"  # обнулила текущую анкету
             self.chats[call["from"]["id"]].cur_tour.purpose_of_trip = "Not Filled"
@@ -607,12 +648,12 @@ class Bot:
             self.chats[call["from"]["id"]].cur_tour.comments = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.contacts = "Not Filled"
 
-            await self.bot.send_message(call["from"]["id"], 'Вы вышли из формы 🔚', reply_markup=None)
+            await self.bot.send_message(call["from"]["id"], 'Вы вышли из формы 🔚')
             await self.print_special_message(chat_id, 'menu', call["from"])
         elif call.data == "exit_from_form_profile_info":
             self.chats[call["from"]["id"]].all_blocked = False
             self.chats[call["from"]["id"]].filling_the_form = False
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             self.chats[call["from"]["id"]].cur_tour.town = "Not Filled"  # обнулила текущую анкету
             self.chats[call["from"]["id"]].cur_tour.purpose_of_trip = "Not Filled"
@@ -625,12 +666,12 @@ class Bot:
             self.chats[call["from"]["id"]].cur_tour.comments = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.contacts = "Not Filled"
 
-            await self.bot.send_message(call["from"]["id"], 'Вы вышли из формы 🔚', reply_markup=None)
+            await self.bot.send_message(call["from"]["id"], 'Вы вышли из формы 🔚')
             await self.print_special_message(chat_id, 'profile_info', call["from"])
         elif call.data == "exit_from_form_info":
             self.chats[call["from"]["id"]].all_blocked = False
             self.chats[call["from"]["id"]].filling_the_form = False
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
             self.chats[call["from"]["id"]].cur_tour.town = "Not Filled"  # обнулила текущую анкету
             self.chats[call["from"]["id"]].cur_tour.purpose_of_trip = "Not Filled"
@@ -643,13 +684,26 @@ class Bot:
             self.chats[call["from"]["id"]].cur_tour.comments = "Not Filled"
             self.chats[call["from"]["id"]].cur_tour.contacts = "Not Filled"
 
-            await self.bot.send_message(call["from"]["id"], 'Вы вышли из формы 🔚', reply_markup=None)
+            await self.bot.send_message(call["from"]["id"], 'Вы вышли из формы 🔚')
             await self.print_special_message(chat_id, 'info', call["from"])
         elif call.data == "continue_filling_the_form":
             self.chats[call["from"]["id"]].all_blocked = True
-            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
             await self.bot.delete_message(call.message.chat.id, call.message.message_id)
-            await self.bot.send_message(call["from"]["id"], 'Жду ответ на последний вопрос ⌛', reply_markup=None)
+            await self.bot.send_message(call["from"]["id"], 'Жду ответ на последний вопрос ⌛')
+        elif call.data == "admin_mes":
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
+            await self.bot.send_message(call["from"]["id"],
+                                        '📩 Введите сообщение для администратора или напишите - отмена')
+            self.chats[call["from"]["id"]].all_blocked = True
+            self.chats[call["from"]["id"]].expect_mes = ExpectedMessage.wait_adm_mes
+        elif call.data == 'back_to_menu_admin':
+            self.expected_message_type = ExpectedMessage.unexpected
+            # self.chats[call["from"]["id"]].all_blocked = False
+            await self.bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id)
+            await self.bot.delete_message(call.message.chat.id, call.message.message_id)
+            await self.print_special_message(chat_id, 'menu', call["from"])
 
     async def registration(self, chat_id, user, stage=0):
         if stage == 0:
@@ -753,9 +807,19 @@ class Bot:
             await self.bot.send_message(chat_id,
                                         "Введите айди пользователя и через символ * сообщение или напишите отмена")
         else:
-            user_id, mes = message.split("*")
-            await self.bot.send_message(int(user_id), mes)
-            await self.print_special_message(admin["id"], "hi_admin", admin)
+            try:
+                user_id, mes = message.split("*")
+                self.chats[admin["id"]].expect_mes = ExpectedMessage.unexpected
+                self.chats[admin["id"]].all_blocked = False
+                try:
+                    await self.bot.send_message(int(user_id),
+                                                "👁‍🗨 Дорогой пользователь, Вам сообщение от администратора: {0}".format(
+                                                    mes))
+                    await self.print_special_message(admin["id"], "hi_admin", admin)
+                except Exception:
+                    await self.bot.send_message(admin["id"], "Такого пользователя нет ❌")
+            except ValueError:
+                await self.bot.send_message(admin["id"], "Вы неправильно ввели ❌")
 
     async def print_info(self, chat_id):
         await self.bot.send_message(chat_id, f'Возраст: {self.chats[chat_id].age}')
